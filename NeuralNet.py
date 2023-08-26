@@ -43,9 +43,25 @@ class NeuralNet:
         a.append(self.__Softmax(z[numHiddenL]))
         return a, z
 
+
     # Back Propagation
     def __back_prop(self, y, a, z, w, b):
+        dw = []
+        db = []
+
+        return dw, db
+
+
+    # Turns Y_train into usable data for our net. Does this by turing a number
+    # into a vector the same size as the output layer with all indexes 0 except for
+    # the one of the origional number
+    def __makeYUsable(self, Y, outputLS, trainSize):
+        y = np.zeros(trainSize, outputLS)
+        y[np.arange(trainSize), Y] = 1
+        return y
+
+    # Public method that trains the net with the given data with the given number
+    # of iterations and the learning rate alpha 
+    def train(self, A0, Y_train, iterations, alpha):
         pass
 
-    def train(self, A0, Y_train, itterations, alpha):
-        pass
