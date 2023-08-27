@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import NeuralNet as NNet
+from NeuralNetlib import NeuralNet as NNet
 
 # Import the training data
 trainData = pd.read_csv('mnist_train.csv')
@@ -11,6 +11,7 @@ trainData = trainData.T
 Y_train = trainData[0] # Desired Result
 A0_train = trainData[1:trainDim]
 A0_train = A0_train / 255.0 # Normalize values between 0 and 1
+
 
 # Import the testing data
 testData = pd.read_csv('mnist_test.csv')
@@ -30,8 +31,11 @@ iterations = 50
 alpha = 0.5
 
 # Creating the network with random values
-neuralNet = NNet.__init__(inputLayerSize, outputLayerSize, hiddenLayerSizes)
+neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Training
 neuralNet.train(A0_train, Y_train, trainSize, iterations, alpha)
+
+# Testing
+testOutput = neuralNet.test(A0_test, Y_test, testSize)
 
