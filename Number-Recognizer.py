@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import NeuralNet as nn
+import NeuralNet as NNet
 
 # Import the training data
 trainData = pd.read_csv('mnist_train.csv')
@@ -18,5 +18,5 @@ inputLayerSize = trainDim - 1 # The first col is the desired result so not part 
 outputLayerSize = 10
 hiddenLayerSizes = [16, 16]
 
-neuralNet = nn.__init__(inputLayerSize, outputLayerSize, hiddenLayerSizes)
+neuralNet = NNet.__init__(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 

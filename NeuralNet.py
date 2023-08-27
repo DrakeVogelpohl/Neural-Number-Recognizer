@@ -4,15 +4,16 @@ class NeuralNet:
 
     # Helper for init that creates weights and biases
     def __create_WB(inputLS, outputLS, hiddenLS, numHiddenL):
-        w = [2*np.random.rand(hiddenLS[0], inputLS) - 1]
-        b = [2*np.random.rand(hiddenLS[0], 1) - 1]
+        w = [np.random.uniform(-1, 1, (hiddenLS[0], inputLS))]
+        b = [np.random.uniform(-1, 1, (hiddenLS[0], 1))]
 
         for n in range(numHiddenL - 1):
-            w.append(2*np.random.rand(hiddenLS[n+1], hiddenLS[n]) - 1)
-            b.append(2*np.random.rand(hiddenLS[n+1], 1) - 1)
+            w.append(np.random.uniform(-1, 1, (hiddenLS[n+1], hiddenLS[n])))
+            b.append(np.random.uniform(-1, 1, (hiddenLS[n+1], 1)))
+            
+        w.append(np.random.uniform(-1, 1, (outputLS, hiddenLS[numHiddenL - 1])))
+        b.append(np.random.uniform(-1, 1, (outputLS, 1)))
 
-        w.append(2*np.random.rand(outputLS, hiddenLS[numHiddenL - 1]) - 1)
-        b.append(2*np.random.rand(outputLS, 1) - 1)
         return w, b
 
     # Initialization
@@ -26,15 +27,20 @@ class NeuralNet:
 
     # Activation Functions and Derivatves
     def __Softmax(Z):
-        return np.exp(Z) / np.sum(np.exp(Z))
+        exp = np.exp(Z - Z.max())
+        return exp / np.sum(exp)
     
-    def __SoftmaxDerivative(Z):
+    def __SoftmaxDerivative(self, Z):
+        sm = self.__Softmax(Z)
+        jac = np.diagflat(Z) - np.dot(sm, sm.T)
         return Z
 
     def __ReLU(Z):
         return np.max(Z, 0)
     
     def __RelUDerivative(Z):
+        Z[Z<=0] = 0
+        Z[Z>0] = 1
         return Z
 
 
@@ -52,12 +58,21 @@ class NeuralNet:
 
     # Back Propagation
     # The math was done on a separate doc linked in the ReadMe
-    def __back_prop(self, y, a, z, w, b, numHiddenL):
-        dw = []
-        db = [2*(a[numHiddenL + 1] - y) * self.__SoftmaxDerivative(z[numHiddenL])]
+    def __back_prop(self, y, a, z, w, numHiddenL, trainSize):
+        # Last layer
+        dCdbL = 2*(a[numHiddenL + 1] - y) * self.__SoftmaxDerivative(z[numHiddenL])
+        db = [((1/trainSize) * np.sum(dCdbL, axis=1))] # MIGHT HAVE TO NORMALIZE AT END
 
-        for n in range(numHiddenL-1):
-            db.append(w[numHiddenL - n].T.dot(db[n]) * self.__ReLUDerivative(z[numHiddenL-1 - n]))
+        dCdwL = db[0].dot(a[numHiddenL].T)
+        dw = [((1/trainSize) * np.sum(dCdwL, axis=1))]
+
+        # Every other layer
+        for n in range(numHiddenL):
+            dCdb = w[numHiddenL - n].T.dot(db[n]) * self.__ReLUDerivative(z[numHiddenL-1 - n])
+            db.append(((1/trainSize) * np.sum(dCdb, axis=1)))
+
+            dCdw = db[n+1].dot(a[numHiddenL-1 -n].T)
+            dw.append(((1/trainSize) * np.sum(dCdw, axis=1)))      
 
         return dw.reverse(), db.reverse()
 
