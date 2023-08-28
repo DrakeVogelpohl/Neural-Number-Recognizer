@@ -1,5 +1,6 @@
 import numpy as np
-
+## TODO
+# implement momentum and different cost functions (Cross Entropy)
 class NeuralNet:
 
     # Helper for init that creates weights and biases
@@ -29,21 +30,24 @@ class NeuralNet:
     def __Sigmoid(self, Z):
         return 1 / (1 + np.exp(-Z))
 
-    def __SigmoidDerivative(self, Z):
-        return self.__Sigmoid(Z) * (1 - self.__Sigmoid(Z))
+    def __SigmoidDerivative(self, Z, da):
+        sigDeriv = self.__Sigmoid(Z) * (1 - self.__Sigmoid(Z))
+        return da * sigDeriv
 
     def __tanh(self, Z):
         return (2 * self.__Sigmoid(2*Z)) - 1
 
-    def __tanhDerivative(self, Z):
-        return 1 - (self.__tanh(Z) * self.__tanh(Z))
+    def __tanhDerivative(self, Z, da):
+        tanhDeriv = 1 - (self.__tanh(Z) * self.__tanh(Z))
+        return da * tanhDeriv
 
     def __Softmax(self, Z):
         exp = np.exp(Z - Z.max())
         return exp / np.sum(exp, axis=0)
     
-    def __SoftmaxDerivative(self, Z, da, layerSize): 
+    def __SoftmaxDerivative(self, Z, da): 
         # I used The Maverick Meerkat's article as a guide #
+        layerSize, _ = Z.shape
         sm = self.__Softmax(Z)
         sm = sm.T
         tensor1 = np.einsum('ij,ik->ijk', sm, sm) # (dataPoints, layerSize, layerSize)
@@ -55,32 +59,33 @@ class NeuralNet:
     def __ReLU(self, Z):
         return np.maximum(Z, 0)
     
-    def __RelUDerivative(self, Z):
+    def __RelUDerivative(self, Z, da):
         ZCopy = Z.copy()
         ZCopy[Z<=0] = 0
         ZCopy[Z>0] = 1
-        return ZCopy
+        return da * ZCopy
     
     def __LeakyReLU(self, Z):
         negativeSlope = 0.05
         return np.maximum(Z, 0) + negativeSlope*np.minimum(0, Z)
     
-    def __LeakyRelUDerivative(self, Z):
+    def __LeakyRelUDerivative(self, Z, da):
         negativeSlope = 0.05
         ZCopy = Z.copy()
         ZCopy[Z<=0] = negativeSlope
         ZCopy[Z>0] = 1
-        return ZCopy
+        return da * ZCopy
     
     def __ELU(self, Z):
         alpha = 0.5
         return np.maximum(Z, 0) + alpha*(np.exp(np.minimum(0, Z)) - 1)
 
-    def __ELUDerivative(self, Z):
+    def __ELUDerivative(self, Z, da):
         alpha = 0.5
         ZCopy = Z.copy()
         ZCopy[Z>0] = 1
-        return np.where(ZCopy > 0, ZCopy, alpha * np.exp(ZCopy))
+        eluDeriv = np.where(ZCopy > 0, ZCopy, alpha * np.exp(ZCopy))
+        return da * eluDeriv
 
 
 
@@ -91,7 +96,7 @@ class NeuralNet:
         
         for n in range(numHiddenL):
             z.append(w[n].dot(a[n]) + b[n])
-            a.append(self.__LeakyReLU(z[n]))
+            a.append(self.__ELU(z[n]))
         z.append(w[numHiddenL].dot(a[numHiddenL]) + b[numHiddenL])
         a.append(self.__Softmax(z[numHiddenL]))
         return a, z
@@ -101,13 +106,15 @@ class NeuralNet:
     # The math was done on a separate doc linked in the ReadMe
     def __back_prop(self, y, a, z, w, numHiddenL, trainSize):
         # Last layer
-        dz = [self.__SoftmaxDerivative(z[numHiddenL], 2*(a[numHiddenL + 1] - y), self.outputLS)]
+        da = [2*(a[numHiddenL + 1] - y)]
+        dz = [self.__SoftmaxDerivative(z[numHiddenL], da[0])]
         db = [((1/trainSize) * np.sum(dz[0], axis=1))]
         dw = [((1/trainSize) * dz[0].dot(a[numHiddenL].T))] 
 
         # Every other layer
         for n in range(numHiddenL):
-            dz.append(w[numHiddenL - n].T.dot(dz[n]) * self.__LeakyRelUDerivative(z[numHiddenL-1 - n]))
+            da.append(w[numHiddenL - n].T.dot(dz[n]))
+            dz.append(self.__ELUDerivative(z[numHiddenL-1 - n], da[n+1]))
             db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
             dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
