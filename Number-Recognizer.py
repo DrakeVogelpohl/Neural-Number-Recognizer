@@ -34,11 +34,15 @@ print("Alpha: ", alpha)
 # Creating the network with random values
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
+# Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
+activationFunction = "ELU"
+outActFunc = "Softmax"
+
 # Training
 print("\nTraining")
-neuralNet.train(A0_train, Y_train, trainSize, iterations, alpha)
+neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha)
 
 # Testing
 print("\nTesting")
-testOutput = neuralNet.test(A0_test, Y_test, testSize)
+testOutput = neuralNet.test(activationFunction, outActFunc, A0_test, Y_test, testSize)
 

@@ -34,11 +34,11 @@ class NeuralNet:
         sigDeriv = self.__Sigmoid(Z) * (1 - self.__Sigmoid(Z))
         return da * sigDeriv
 
-    def __tanh(self, Z):
+    def __Tanh(self, Z):
         return (2 * self.__Sigmoid(2*Z)) - 1
 
-    def __tanhDerivative(self, Z, da):
-        tanhDeriv = 1 - (self.__tanh(Z) * self.__tanh(Z))
+    def __TanhDerivative(self, Z, da):
+        tanhDeriv = 1 - (self.__Tanh(Z) * self.__Tanh(Z))
         return da * tanhDeriv
 
     def __Softmax(self, Z):
@@ -59,7 +59,7 @@ class NeuralNet:
     def __ReLU(self, Z):
         return np.maximum(Z, 0)
     
-    def __RelUDerivative(self, Z, da):
+    def __ReLUDerivative(self, Z, da):
         ZCopy = Z.copy()
         ZCopy[Z<=0] = 0
         ZCopy[Z>0] = 1
@@ -69,7 +69,7 @@ class NeuralNet:
         negativeSlope = 0.05
         return np.maximum(Z, 0) + negativeSlope*np.minimum(0, Z)
     
-    def __LeakyRelUDerivative(self, Z, da):
+    def __LeakyReLUDerivative(self, Z, da):
         negativeSlope = 0.05
         ZCopy = Z.copy()
         ZCopy[Z<=0] = negativeSlope
@@ -87,34 +87,74 @@ class NeuralNet:
         eluDeriv = np.where(ZCopy > 0, ZCopy, alpha * np.exp(ZCopy))
         return da * eluDeriv
 
+    def __activationSwitch(self, actFunc):
+        match actFunc:
+            case "Sigmoid":
+                return self.__Sigmoid
+            case "Tanh":
+                return self.__Tanh
+            case "Softmax":
+                return self.__Softmax
+            case "ReLU":
+                return self.__ReLU
+            case "LeakyReLU":
+                return self.__LeakyReLU
+            case "ELU":
+                return self.__ELU
+            case default:
+                raise Exception("Not an implemented activation function")
+
+    def ____activationDerivativeSwitch(self, actFunc):
+        match actFunc:
+            case "Sigmoid":
+                return self.__SigmoidDerivative
+            case "Tanh":
+                return self.__TanhDerivative
+            case "Softmax":
+                return self.__SoftmaxDerivative
+            case "ReLU":
+                return self.__ReLUDerivative
+            case "LeakyReLU":
+                return self.__LeakyReLUDerivative
+            case "ELU":
+                return self.__ELUDerivative
+            case default:
+                raise Exception("Not an implemented activation function")
 
 
     # Foward Propagation
-    def __forward_prop(self, A0, w, b, numHiddenL):
+    def __forward_prop(self, actFunc, outpActFun, A0, w, b, numHiddenL):
+        # Assigning the activation functions
+        afunc = self.__activationSwitch(actFunc)
+        ofunc = self.__activationSwitch(outpActFun)
+
         a = [A0]
         z = []
-        
         for n in range(numHiddenL):
             z.append(w[n].dot(a[n]) + b[n])
-            a.append(self.__ELU(z[n]))
+            a.append(afunc(z[n]))
         z.append(w[numHiddenL].dot(a[numHiddenL]) + b[numHiddenL])
-        a.append(self.__Softmax(z[numHiddenL]))
+        a.append(ofunc(z[numHiddenL]))
         return a, z
 
 
     # Back Propagation
     # The math was done on a separate doc linked in the ReadMe
-    def __back_prop(self, y, a, z, w, numHiddenL, trainSize):
+    def __back_prop(self, actFunc, outpActFun, y, a, z, w, numHiddenL, trainSize):
+        # Assigning the activation functions
+        afunc = self.____activationDerivativeSwitch(actFunc)
+        ofunc = self.____activationDerivativeSwitch(outpActFun)
+
         # Last layer
         da = [2*(a[numHiddenL + 1] - y)]
-        dz = [self.__SoftmaxDerivative(z[numHiddenL], da[0])]
+        dz = [ofunc(z[numHiddenL], da[0])]
         db = [((1/trainSize) * np.sum(dz[0], axis=1))]
         dw = [((1/trainSize) * dz[0].dot(a[numHiddenL].T))] 
 
         # Every other layer
         for n in range(numHiddenL):
             da.append(w[numHiddenL - n].T.dot(dz[n]))
-            dz.append(self.__ELUDerivative(z[numHiddenL-1 - n], da[n+1]))
+            dz.append(afunc(z[numHiddenL-1 - n], da[n+1]))
             db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
             dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
@@ -155,26 +195,26 @@ class NeuralNet:
 
     # Public method that trains the net with the given data with the given number
     # of iterations and the learning rate alpha 
-    def train(self, A0_train, Y_train, trainSize, iterations, alpha):
+    def train(self, actFunc, outpActFun, A0_train, Y_train, trainSize, iterations, alpha):
         y = self.__makeYUsable(Y_train , self.outputLS, trainSize)
 
         for i in range(iterations):
-            a, z = self.__forward_prop(A0_train, self.w, self.b, self.numHiddenL)
+            a, z = self.__forward_prop(actFunc, outpActFun, A0_train, self.w, self.b, self.numHiddenL)
 
             if (i+1) % 250 == 0 or i == 0:
                 print("Iteration: ", (i+1))
                 print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_train, trainSize))
 
-            dw, db = self.__back_prop(y, a, z, self.w, self.numHiddenL, trainSize)
+            dw, db = self.__back_prop(actFunc, outpActFun, y, a, z, self.w, self.numHiddenL, trainSize)
             self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha, self.numHiddenL)
         return
     
 
     # Public method for testing the net with a given set of data. Prints the accuracy and returns
     # the final output layer
-    def test(self, A0_test, Y_test, testSize):
+    def test(self, actFunc, outActFun, A0_test, Y_test, testSize):
         y = self.__makeYUsable(Y_test, self.outputLS, testSize)
-        a, _ = self.__forward_prop(A0_test, self.w, self.b, self.numHiddenL)
+        a, _ = self.__forward_prop(actFunc, outActFun, A0_test, self.w, self.b, self.numHiddenL)
         print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_test, testSize))
         return a[self.numHiddenL + 1]
 
