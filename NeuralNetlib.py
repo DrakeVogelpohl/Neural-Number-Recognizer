@@ -29,9 +29,9 @@ class NeuralNet:
     def __Sigmoid(self, Z):
         return 1 / (1 + np.exp(-Z))
 
-    def __SigmoindDerivative(self, Z):
+    def __SigmoidDerivative(self, Z):
         return self.__Sigmoid(Z) * (1 - self.__Sigmoid(Z))
-    
+
     def __tanh(self, Z):
         return (2 * self.__Sigmoid(2*Z)) - 1
 
@@ -62,22 +62,22 @@ class NeuralNet:
         return ZCopy
     
     def __LeakyReLU(self, Z):
-        negativeSlope = 0.1
+        negativeSlope = 0.05
         return np.maximum(Z, 0) + negativeSlope*np.minimum(0, Z)
     
     def __LeakyRelUDerivative(self, Z):
-        negativeSlope = 0.1
+        negativeSlope = 0.05
         ZCopy = Z.copy()
         ZCopy[Z<=0] = negativeSlope
         ZCopy[Z>0] = 1
-        return Z
+        return ZCopy
     
     def __ELU(self, Z):
-        alpha = 0.1
-        return np.maximum(Z, 0) + alpha(np.exp(np.minimum(0, Z)) - 1)
+        alpha = 0.5
+        return np.maximum(Z, 0) + alpha*(np.exp(np.minimum(0, Z)) - 1)
 
     def __ELUDerivative(self, Z):
-        alpha = 0.1
+        alpha = 0.5
         ZCopy = Z.copy()
         ZCopy[Z>0] = 1
         return np.where(ZCopy > 0, ZCopy, alpha * np.exp(ZCopy))
@@ -88,9 +88,10 @@ class NeuralNet:
     def __forward_prop(self, A0, w, b, numHiddenL):
         a = [A0]
         z = []
+        
         for n in range(numHiddenL):
             z.append(w[n].dot(a[n]) + b[n])
-            a.append(self.__ReLU(z[n]))
+            a.append(self.__LeakyReLU(z[n]))
         z.append(w[numHiddenL].dot(a[numHiddenL]) + b[numHiddenL])
         a.append(self.__Softmax(z[numHiddenL]))
         return a, z
@@ -106,7 +107,7 @@ class NeuralNet:
 
         # Every other layer
         for n in range(numHiddenL):
-            dz.append(w[numHiddenL - n].T.dot(dz[n]) * self.__RelUDerivative(z[numHiddenL-1 - n]))
+            dz.append(w[numHiddenL - n].T.dot(dz[n]) * self.__LeakyRelUDerivative(z[numHiddenL-1 - n]))
             db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
             dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
@@ -153,7 +154,7 @@ class NeuralNet:
         for i in range(iterations):
             a, z = self.__forward_prop(A0_train, self.w, self.b, self.numHiddenL)
 
-            if (i+1) % 50 == 0 or i == 0:
+            if (i+1) % 250 == 0 or i == 0:
                 print("Iteration: ", (i+1))
                 print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_train, trainSize))
 

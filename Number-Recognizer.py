@@ -26,18 +26,19 @@ A0_test = A0_test / 255.0 # Normalize values between 0 and 1
 # Neural Net Architecture
 inputLayerSize = trainDim - 1 # The first col is the desired result so not part of the input size
 outputLayerSize = 10
-hiddenLayerSizes = [2, 2]
-iterations = 50
-alpha = 0.5
+hiddenLayerSizes = [16, 10]
+iterations = 500
+alpha = 5
+print("Alpha: ", alpha)
 
 # Creating the network with random values
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Training
-print("Training")
+print("\nTraining")
 neuralNet.train(A0_train, Y_train, trainSize, iterations, alpha)
 
 # Testing
-print("Testing")
+print("\nTesting")
 testOutput = neuralNet.test(A0_test, Y_test, testSize)
 
