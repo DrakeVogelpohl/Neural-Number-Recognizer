@@ -26,7 +26,7 @@ A0_test = A0_test / 255.0 # Normalize values between 0 and 1
 # Neural Net Architecture
 inputLayerSize = trainDim - 1 # The first col is the desired result so not part of the input size
 outputLayerSize = 10
-hiddenLayerSizes = [16, 16]
+hiddenLayerSizes = [2, 2]
 iterations = 50
 alpha = 0.5
 
@@ -34,8 +34,10 @@ alpha = 0.5
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Training
+print("Training")
 neuralNet.train(A0_train, Y_train, trainSize, iterations, alpha)
 
 # Testing
+print("Testing")
 testOutput = neuralNet.test(A0_test, Y_test, testSize)
 

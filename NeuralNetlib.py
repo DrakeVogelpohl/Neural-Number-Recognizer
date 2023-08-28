@@ -40,15 +40,17 @@ class NeuralNet:
 
     def __Softmax(self, Z):
         exp = np.exp(Z - Z.max())
-        return exp / np.sum(exp)
+        return exp / np.sum(exp, axis=0)
     
     def __SoftmaxDerivative(self, Z, da, layerSize): 
         # I used The Maverick Meerkat's article as a guide #
         sm = self.__Softmax(Z)
-        tensor1 = np.einsum('ik,jk->ijk', sm, sm) # (layerSize, layerSize, dataPoints)
-        tensor2 = np.einsum('ik,ij->ijk', sm, np.eye(layerSize, layerSize))  # (layerSize, layerSize, dataPoints)
+        sm = sm.T
+        tensor1 = np.einsum('ij,ik->ijk', sm, sm) # (dataPoints, layerSize, layerSize)
+        tensor2 = np.einsum('ij,jk->ijk', sm, np.eye(layerSize, layerSize))  # (dataPoints, layerSize, layerSize)
         dSM = tensor2 - tensor1
-        return np.einsum('ijk,jk->ik', dSM, da)
+        dz = np.einsum('ijk,ik->ij', dSM, da.T)
+        return dz.T
 
     def __ReLU(self, Z):
         return np.maximum(Z, 0)
@@ -97,19 +99,16 @@ class NeuralNet:
     # Back Propagation
     # The math was done on a separate doc linked in the ReadMe
     def __back_prop(self, y, a, z, w, numHiddenL, trainSize):
-        ## MIGHT HAVE TO NORMALIZE AT END ##
-        # Need to check the math first + test both with the data and see which one is better
-
         # Last layer
         dz = [self.__SoftmaxDerivative(z[numHiddenL], 2*(a[numHiddenL + 1] - y), self.outputLS)]
-        db = [((1/trainSize) * np.sum(dz, axis=1))]
-        dw = [((1/trainSize) * np.sum(dz[0].dot(a[numHiddenL].T), axis=1))]
+        db = [((1/trainSize) * np.sum(dz[0], axis=1))]
+        dw = [((1/trainSize) * dz[0].dot(a[numHiddenL].T))] 
 
         # Every other layer
         for n in range(numHiddenL):
-            dz.append(w[numHiddenL - n].T.dot(db[n]) * self.__RelUDerivative(z[numHiddenL-1 - n]))
+            dz.append(w[numHiddenL - n].T.dot(dz[n]) * self.__RelUDerivative(z[numHiddenL-1 - n]))
             db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
-            dw.append(((1/trainSize) * np.sum(dz[n+1].dot(a[numHiddenL-1 -n].T), axis=1)))      
+            dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
         # Reverse order
         dw.reverse()
@@ -118,9 +117,12 @@ class NeuralNet:
     
 
     # Update weights and biases
-    def __update_wb(self, w, b, dw, db, alpha):
-        new_w = w - dw * alpha
-        new_b = b - db * alpha
+    def __update_wb(self, w, b, dw, db, alpha, numHiddenL):
+        new_w = []
+        new_b = []
+        for i in range(numHiddenL + 1):
+            new_w.append(w[i] - alpha * dw[i])
+            new_b.append(b[i] - np.reshape(alpha * db[i], (-1,1)))
         return new_w, new_b
 
 
@@ -156,7 +158,7 @@ class NeuralNet:
                 print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_train, trainSize))
 
             dw, db = self.__back_prop(y, a, z, self.w, self.numHiddenL, trainSize)
-            self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha)
+            self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha, self.numHiddenL)
         return
     
 
@@ -165,6 +167,6 @@ class NeuralNet:
     def test(self, A0_test, Y_test, testSize):
         y = self.__makeYUsable(Y_test, self.outputLS, testSize)
         a, _ = self.__forward_prop(A0_test, self.w, self.b, self.numHiddenL)
-        print("Accuracy: ", self.get_accuracy(self.get_predictions(a, self.numHiddenL), Y_test, testSize))
+        print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_test, testSize))
         return a[self.numHiddenL + 1]
 
