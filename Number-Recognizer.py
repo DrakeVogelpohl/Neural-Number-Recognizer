@@ -35,12 +35,12 @@ print("Alpha: ", alpha)
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
-activationFunction = "ELU"
+activationFunction = "LeakyReLU"
 outActFunc = "Softmax"
 
 # Training
 print("\nTraining")
-neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha)
+neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha, SGD=1)
 
 # Testing
 print("\nTesting")

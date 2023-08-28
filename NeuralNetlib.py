@@ -190,23 +190,42 @@ class NeuralNet:
     # Get the accuracy of the net compared to the data
     def __get_accuracy(self, predictions, Y, Y_size):
         return np.sum(predictions == Y) / Y_size
+    
+    def __print_itterationAccuracy(self, dispFreq, itteration, SGD, Y_train, indexes, a, numHiddenL, batchSize):
+        if (itteration+1) % dispFreq == 0 or itteration == 0:
+            if SGD == 1:
+                Y = Y_train[indexes]
+            else:
+                Y = Y_train
+            print("Iteration: ", (itteration+1))
+            print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, numHiddenL), Y, batchSize))
+        return
+
+    # Stochastic Gradient Descent
+    def __SGD(self, SGD, A0, Y, trainSize, batchSize):
+        if SGD == 1:
+            indexes = np.random.choice(trainSize, batchSize)
+            A0_new = A0[:,indexes]
+            Y_new = Y[:,indexes]
+            return A0_new, Y_new, batchSize, indexes
+        else: 
+            return A0, Y, trainSize, None
 
 
 
     # Public method that trains the net with the given data with the given number
     # of iterations and the learning rate alpha 
-    def train(self, actFunc, outpActFun, A0_train, Y_train, trainSize, iterations, alpha):
-        y = self.__makeYUsable(Y_train , self.outputLS, trainSize)
+    def train(self, actFunc, outpActFun, A0_train, Y_train, trainSize, iterations, alpha, dispFreq=250, SGD=0, batchSize=100):
+        y = self.__makeYUsable(Y_train, self.outputLS, trainSize)
 
         for i in range(iterations):
-            a, z = self.__forward_prop(actFunc, outpActFun, A0_train, self.w, self.b, self.numHiddenL)
+            A0_batch, y_batch, batchSize, indexes = self.__SGD(SGD, A0_train, y, trainSize, batchSize)
 
-            if (i+1) % 250 == 0 or i == 0:
-                print("Iteration: ", (i+1))
-                print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_train, trainSize))
-
-            dw, db = self.__back_prop(actFunc, outpActFun, y, a, z, self.w, self.numHiddenL, trainSize)
+            a, z = self.__forward_prop(actFunc, outpActFun, A0_batch, self.w, self.b, self.numHiddenL)            
+            dw, db = self.__back_prop(actFunc, outpActFun, y_batch, a, z, self.w, self.numHiddenL, batchSize)
             self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha, self.numHiddenL)
+
+            self.__print_itterationAccuracy(dispFreq, i, SGD, Y_train, indexes, a, self.numHiddenL, batchSize)
         return
     
 
