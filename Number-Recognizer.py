@@ -26,9 +26,10 @@ A0_test = A0_test / 255.0 # Normalize values between 0 and 1
 # Neural Net Architecture
 inputLayerSize = trainDim - 1 # The first col is the desired result so not part of the input size
 outputLayerSize = 10
-hiddenLayerSizes = [16, 10]
-iterations = 500
-alpha = 5
+hiddenLayerSizes = [100, 10]
+iterations = 10000
+stochasticGD = 1
+alpha = 1
 print("Alpha: ", alpha)
 
 # Creating the network with random values
@@ -40,7 +41,7 @@ outActFunc = "Softmax"
 
 # Training
 print("\nTraining")
-neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha, SGD=1)
+neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha, dispFreq=2500, SGD=stochasticGD, batchSize=100)
 
 # Testing
 print("\nTesting")
