@@ -1,19 +1,23 @@
 import numpy as np
 ## TODO
-# implement momentum and different cost functions (Cross Entropy)
+# implement momentum
 class NeuralNet:
 
     # Helper for init that creates weights and biases
     def __create_WB(self, inputLS, outputLS, hiddenLS, numHiddenL):
-        w = [np.random.uniform(-1, 1, (hiddenLS[0], inputLS))]
-        b = [np.random.uniform(-1, 1, (hiddenLS[0], 1))]
+        ## Use He at al. (2015) variance to initialize weights ##
+        w_var = 2 / inputLS
+        w = [np.random.normal(scale=w_var, size=(hiddenLS[0], inputLS))]
+        b = [np.zeros((hiddenLS[0], 1))]
 
         for n in range(numHiddenL - 1):
-            w.append(np.random.uniform(-1, 1, (hiddenLS[n+1], hiddenLS[n])))
-            b.append(np.random.uniform(-1, 1, (hiddenLS[n+1], 1)))
+            w_var = 2 / hiddenLS[n]
+            w.append(np.random.normal(scale=w_var, size=(hiddenLS[n+1], hiddenLS[n])))
+            b.append(np.zeros((hiddenLS[n+1], 1)))
             
-        w.append(np.random.uniform(-1, 1, (outputLS, hiddenLS[numHiddenL - 1])))
-        b.append(np.random.uniform(-1, 1, (outputLS, 1)))
+        w_var = 2 / hiddenLS[numHiddenL - 1]
+        w.append(np.random.normal(scale=w_var, size=(outputLS, hiddenLS[numHiddenL - 1])))
+        b.append(np.zeros((outputLS, 1)))
 
         return w, b
 

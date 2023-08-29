@@ -37,10 +37,10 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 # *Note: To use Cross entropy must use Softmax as the output Layer activation
 iterations = 10000
 stochasticGD = 1
-alpha = 0.2
+alpha = 2
 activationFunction = "LeakyReLU"
 outActFunc = "Softmax"
-lossFunc = "Cross Entropy"
+lossFunc = "Mean Squared"
 print("Alpha: ", alpha)
 
 # Training
