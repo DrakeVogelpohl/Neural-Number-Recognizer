@@ -122,6 +122,28 @@ class NeuralNet:
                 raise Exception("Not an implemented activation function")
 
 
+    # Loss function derivatives
+    def __MeanSquaredError(self, a, y, z, outFunc):
+        da = a - y
+        return outFunc(z, da)
+    
+    def __CrossEntropy(self, a, y, z, outFunc):
+        grad = a - y
+        _, batchSize = y.shape
+        scaledGrad = grad / batchSize
+        return grad
+
+    def __lossFunctionSwitch(self, lossFunc):
+        match lossFunc:
+            case "Mean Squared":
+                return self.__MeanSquaredError
+            case "Cross Entropy":
+                return self.__CrossEntropy
+            case default:
+                raise Exception("Not an implemented loss function")
+
+
+
     # Foward Propagation
     def __forward_prop(self, actFunc, outpActFun, A0, w, b, numHiddenL):
         # Assigning the activation functions
@@ -140,21 +162,22 @@ class NeuralNet:
 
     # Back Propagation
     # The math was done on a separate doc linked in the ReadMe
-    def __back_prop(self, actFunc, outpActFun, y, a, z, w, numHiddenL, trainSize):
-        # Assigning the activation functions
+    def __back_prop(self, actFunc, outpActFun, lossFunc, y, a, z, w, numHiddenL, trainSize):
+        # Assigning the activation and loss functions
         afunc = self.____activationDerivativeSwitch(actFunc)
         ofunc = self.____activationDerivativeSwitch(outpActFun)
+        lfunc = self.__lossFunctionSwitch(lossFunc)
 
         # Last layer
-        da = [2*(a[numHiddenL + 1] - y)]
-        dz = [ofunc(z[numHiddenL], da[0])]
+        da = []
+        dz = [lfunc(a[numHiddenL + 1], y, z[numHiddenL], ofunc)]
         db = [((1/trainSize) * np.sum(dz[0], axis=1))]
         dw = [((1/trainSize) * dz[0].dot(a[numHiddenL].T))] 
 
         # Every other layer
         for n in range(numHiddenL):
             da.append(w[numHiddenL - n].T.dot(dz[n]))
-            dz.append(afunc(z[numHiddenL-1 - n], da[n+1]))
+            dz.append(afunc(z[numHiddenL-1 - n], da[n]))
             db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
             dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
@@ -215,14 +238,14 @@ class NeuralNet:
 
     # Public method that trains the net with the given data with the given number
     # of iterations and the learning rate alpha 
-    def train(self, actFunc, outpActFun, A0_train, Y_train, trainSize, iterations, alpha, dispFreq=250, SGD=0, batchSize=100):
+    def train(self, actFunc, outpActFun, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, dispFreq=250, SGD=0, batchSize=100):
         y = self.__makeYUsable(Y_train, self.outputLS, trainSize)
 
         for i in range(iterations):
             A0_batch, y_batch, batchSize, indexes = self.__SGD(SGD, A0_train, y, trainSize, batchSize)
 
             a, z = self.__forward_prop(actFunc, outpActFun, A0_batch, self.w, self.b, self.numHiddenL)            
-            dw, db = self.__back_prop(actFunc, outpActFun, y_batch, a, z, self.w, self.numHiddenL, batchSize)
+            dw, db = self.__back_prop(actFunc, outpActFun, lossFunc, y_batch, a, z, self.w, self.numHiddenL, batchSize)
             self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha, self.numHiddenL)
 
             self.__print_itterationAccuracy(dispFreq, i, SGD, Y_train, indexes, a, self.numHiddenL, batchSize)

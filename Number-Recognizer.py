@@ -33,17 +33,20 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Training Architecture
 # Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
+# Supported loss functions: "Mean Squared", "Cross Entropy"
+# *Note: To use Cross entropy must use Softmax as the output Layer activation
 iterations = 10000
 stochasticGD = 1
-alpha = 0.7
+alpha = 0.2
 activationFunction = "LeakyReLU"
 outActFunc = "Softmax"
+lossFunc = "Cross Entropy"
 print("Alpha: ", alpha)
 
 # Training
 print("\nTraining")
-neuralNet.train(activationFunction, outActFunc, A0_train, Y_train, trainSize, iterations, alpha, 
-                dispFreq=5000, SGD=stochasticGD, batchSize=50)
+neuralNet.train(activationFunction, outActFunc, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
+                dispFreq=5000, SGD=stochasticGD, batchSize=100)
 
 
 # Testing
