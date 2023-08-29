@@ -42,7 +42,7 @@ class NeuralNet:
         return da * tanhDeriv
 
     def __Softmax(self, Z):
-        exp = np.exp(Z - Z.max())
+        exp = np.exp(Z - np.max(Z, axis=0))
         return exp / np.sum(exp, axis=0)
     
     def __SoftmaxDerivative(self, Z, da): 
