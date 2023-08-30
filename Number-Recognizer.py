@@ -25,7 +25,7 @@ A0_test = A0_test / 255.0 # Normalize values between 0 and 1
 # Neural Net Architecture
 inputLayerSize = trainDim - 1 # The first col is the desired result so not part of the input size
 outputLayerSize = 10
-hiddenLayerSizes = [140, 100, 16]
+hiddenLayerSizes = [100, 10]
 
 # Creating the network with random values
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
@@ -45,7 +45,7 @@ iterations = 10000
 displayFreq = 5000
 stochasticGD = 1
 moment = "No momentum"
-alpha = 1.7
+alpha = 1.6
 activationFunction = "ELU"
 outActFunc = "Softmax"
 lossFunc = "Mean Squared"
@@ -54,10 +54,27 @@ print("Alpha: ", alpha)
 # Training
 print("\nTraining")
 neuralNet.train(activationFunction, outActFunc, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
-                dispFreq=displayFreq, SGD=stochasticGD, batchSize=200, momentum=moment)
+                dispFreq=displayFreq, SGD=stochasticGD, batchSize=100, momentum=moment)
 
 
 # Testing
 print("\nTesting")
-testOutput = neuralNet.test(activationFunction, outActFunc, A0_test, Y_test, testSize)
+testPredictions = neuralNet.test(activationFunction, outActFunc, A0_test, Y_test, testSize)
 
+
+# Displaying a prediction 
+def disp_prediction(index, A0, Y, prediction):
+    current_image = A0[:, index, None]
+    label = Y[index]
+    print("\nPrediction: ", prediction[index])
+    print("Label: ", label)
+    
+    current_image = current_image.reshape((28, 28)) * 255
+    plt.gray()
+    plt.imshow(current_image, interpolation='nearest')
+    plt.show() 
+
+# Displaying a random test
+print("Show Predictions")
+for i in range(5):
+    disp_prediction(np.random.randint(testSize), A0_test, Y_test, testPredictions)

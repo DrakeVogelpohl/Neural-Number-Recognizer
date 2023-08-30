@@ -166,5 +166,5 @@ class NeuralNet:
     def test(self, actFunc, outActFun, A0_test, Y_test, testSize):
         a, _ = self.__forward_prop(actFunc, outActFun, A0_test, self.w, self.b, self.numHiddenL)
         print("Accuracy: ", self.__get_accuracy(self.__get_predictions(a, self.numHiddenL), Y_test, testSize))
-        return a[self.numHiddenL + 1]
+        return self.__get_predictions(a, self.numHiddenL)
 
