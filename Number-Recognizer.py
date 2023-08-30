@@ -33,7 +33,7 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 # Training Architecture
 # Supported Stochastic Gradient Descent: SGD=1, batchSize='m'
-# Supported Momentums: momentum = "ADAM", "SGD with momentum" 
+# Supported Momentums: momentum = "No momentum", "ADAM", "SGD with momentum"
     # For ADAM: epsilon='e', beta_1='b1', beta_2='b2' 
         # default settings are: e=1e-8, beta_1=0.9, beta_2=0.999, alpha=0.001
     # For SGD with momentum: beta_1='b1' with default setting of beta_1=0.9
@@ -44,7 +44,7 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 iterations = 10000
 displayFreq = 5000
 stochasticGD = 1
-moment = 0
+moment = "No momentum"
 alpha = 1.7
 activationFunction = "ELU"
 outActFunc = "Softmax"
