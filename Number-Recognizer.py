@@ -25,7 +25,7 @@ A0_test = A0_test / 255.0 # Normalize values between 0 and 1
 # Neural Net Architecture
 inputLayerSize = trainDim - 1 # The first col is the desired result so not part of the input size
 outputLayerSize = 10
-hiddenLayerSizes = [100, 10]
+hiddenLayerSizes = [140, 100, 16]
 
 # Creating the network with random values
 neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
@@ -37,15 +37,16 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
     # For ADAM: epsilon='e', beta_1='b1', beta_2='b2' 
         # default settings are: e=1e-8, beta_1=0.9, beta_2=0.999, alpha=0.001
     # For SGD with momentum: beta_1='b1' with default setting of beta_1=0.9
+        # *Note: scale alpha by 0.1
 # Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
 # Supported loss functions: "Mean Squared", "Cross Entropy"
     # *Note: To use Cross entropy must use Softmax as the output Layer activation
 iterations = 10000
 displayFreq = 5000
 stochasticGD = 1
-moment = "SGD with momentum"
-alpha = 0.2
-activationFunction = "LeakyReLU"
+moment = 0
+alpha = 1.7
+activationFunction = "ELU"
 outActFunc = "Softmax"
 lossFunc = "Mean Squared"
 print("Alpha: ", alpha)
@@ -53,7 +54,7 @@ print("Alpha: ", alpha)
 # Training
 print("\nTraining")
 neuralNet.train(activationFunction, outActFunc, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
-                dispFreq=displayFreq, SGD=stochasticGD, batchSize=100, momentum=moment)
+                dispFreq=displayFreq, SGD=stochasticGD, batchSize=200, momentum=moment)
 
 
 # Testing
