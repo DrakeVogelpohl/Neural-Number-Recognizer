@@ -192,12 +192,28 @@ class NeuralNet:
     
 
     # Update weights and biases
-    def __update_wb(self, ADAM, epsilon, beta_1, beta_2, w, b, dw, db, alpha, moments, t, numHiddenL):
+    def __update_wb(self, momentum, epsilon, beta_1, beta_2, w, b, dw, db, alpha, moments, t, numHiddenL):
         ## Use Kingma at al. (2015) ADAM: A METHOD FOR STOCHASTIC OPTIMIZATION ##
 
         new_w = []
         new_b = []
-        if ADAM == 1:
+        if momentum == "SGD with momentum":
+            v_w = []
+            v_b = []
+
+            for i in range(numHiddenL + 1):
+                # Calculating new velocities
+                v_w.append(beta_1*moments[0][i] + alpha * dw[i])
+                v_b.append(beta_1*moments[1][i] + alpha * db[i])
+
+                # Calculating new weights and biases
+                new_w.append(w[i] - v_w[i])
+                new_b.append(b[i] - v_b[i])
+                pass
+
+            return new_w, new_b, [v_w, v_b]
+
+        elif momentum == "ADAM":
             t += 1
             m_w = []
             m_b = []
@@ -260,8 +276,15 @@ class NeuralNet:
         else: 
             return A0, Y, trainSize, None
         
-    def __ADAM(self, ADAM, w, b, numHiddenL):
-        if ADAM == 1:
+    def __moments(self, momentum, w, b, numHiddenL):
+        if momentum == "SGD with momentum":
+            velocity_w = []
+            velocity_b = []
+            for i in range(numHiddenL + 1):
+                velocity_w.append(np.zeros_like(w[i]))
+                velocity_b.append(np.zeros_like(b[i]))
+            return [velocity_w, velocity_b]
+        elif momentum == "ADAM":
             m_w = []
             m_b = []
             v_w = []
@@ -280,16 +303,16 @@ class NeuralNet:
     # Public method that trains the net with the given data with the given number
     # of iterations and the learning rate alpha 
     def train(self, actFunc, outpActFun, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
-              dispFreq=250, SGD=0, batchSize=100, ADAM=0, epsilon=1e-8, beta_1=0.9, beta_2=0.999):
+              dispFreq=250, SGD=0, batchSize=100, momentum=0, epsilon=1e-8, beta_1=0.9, beta_2=0.999):
         y = self.__makeYUsable(Y_train, self.outputLS, trainSize)
-        moments = self.__ADAM(ADAM, self.w, self.b, self.numHiddenL)
+        moments = self.__moments(momentum, self.w, self.b, self.numHiddenL)
 
         for i in range(iterations):
             A0_batch, y_batch, batchSize, indexes = self.__SGD(SGD, A0_train, y, trainSize, batchSize)
 
             a, z = self.__forward_prop(actFunc, outpActFun, A0_batch, self.w, self.b, self.numHiddenL)            
             dw, db = self.__back_prop(actFunc, outpActFun, lossFunc, y_batch, a, z, self.w, self.numHiddenL, batchSize)
-            self.w, self.b, moments = self.__update_wb(ADAM, epsilon, beta_1, beta_2, self.w, self.b, dw, db, alpha, moments, i, self.numHiddenL)
+            self.w, self.b, moments = self.__update_wb(momentum, epsilon, beta_1, beta_2, self.w, self.b, dw, db, alpha, moments, i, self.numHiddenL)
 
             self.__print_itterationAccuracy(dispFreq, i, SGD, Y_train, indexes, a, self.numHiddenL, batchSize)
         return
