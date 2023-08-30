@@ -32,11 +32,17 @@ neuralNet = NNet(inputLayerSize, outputLayerSize, hiddenLayerSizes)
 
 
 # Training Architecture
+# Supported Stochastic Gradient Descent: SGD=1, batchSize='m'
+# Supported Momentums: ADAM=1, 
+    # For ADAM: epsilon='e', beta_1='b1', beta_2='b2' 
+    # default settings are: e=1e-8, beta_1=0.9, beta_2=0.999, alpha=0.001
 # Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
 # Supported loss functions: "Mean Squared", "Cross Entropy"
-# *Note: To use Cross entropy must use Softmax as the output Layer activation
+    # *Note: To use Cross entropy must use Softmax as the output Layer activation
 iterations = 10000
+displayFreq = 5000
 stochasticGD = 1
+ADAM_moment = 0
 alpha = 2
 activationFunction = "LeakyReLU"
 outActFunc = "Softmax"
@@ -46,7 +52,7 @@ print("Alpha: ", alpha)
 # Training
 print("\nTraining")
 neuralNet.train(activationFunction, outActFunc, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
-                dispFreq=5000, SGD=stochasticGD, batchSize=100)
+                dispFreq=displayFreq, SGD=stochasticGD, batchSize=100, ADAM=ADAM_moment)
 
 
 # Testing

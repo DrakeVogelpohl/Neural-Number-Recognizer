@@ -175,14 +175,14 @@ class NeuralNet:
         # Last layer
         da = []
         dz = [lfunc(a[numHiddenL + 1], y, z[numHiddenL], ofunc)]
-        db = [((1/trainSize) * np.sum(dz[0], axis=1))]
+        db = [np.reshape(((1/trainSize) * np.sum(dz[0], axis=1)), (-1,1))]
         dw = [((1/trainSize) * dz[0].dot(a[numHiddenL].T))] 
 
         # Every other layer
         for n in range(numHiddenL):
             da.append(w[numHiddenL - n].T.dot(dz[n]))
             dz.append(afunc(z[numHiddenL-1 - n], da[n]))
-            db.append(((1/trainSize) * np.sum(dz[n+1], axis=1)))
+            db.append(np.reshape(((1/trainSize) * np.sum(dz[n+1], axis=1)), (-1,1)))
             dw.append(((1/trainSize) * dz[n+1].dot(a[numHiddenL-1 -n].T)))    
 
         # Reverse order
@@ -192,13 +192,35 @@ class NeuralNet:
     
 
     # Update weights and biases
-    def __update_wb(self, w, b, dw, db, alpha, numHiddenL):
+    def __update_wb(self, ADAM, epsilon, beta_1, beta_2, w, b, dw, db, alpha, moments, t, numHiddenL):
+        ## Use Kingma at al. (2015) ADAM: A METHOD FOR STOCHASTIC OPTIMIZATION ##
+
         new_w = []
         new_b = []
-        for i in range(numHiddenL + 1):
-            new_w.append(w[i] - alpha * dw[i])
-            new_b.append(b[i] - np.reshape(alpha * db[i], (-1,1)))
-        return new_w, new_b
+        if ADAM == 1:
+            t += 1
+            m_w = []
+            m_b = []
+            v_w = []
+            v_b = []
+
+            for i in range(numHiddenL + 1):
+                # Calculating new first and second moment estimates
+                m_w.append((beta_1*moments[0][i] + (1-beta_1)*dw[i]) / (1-beta_1**t))
+                m_b.append((beta_1*moments[1][i] + (1-beta_1)*db[i]) / (1-beta_1**t))
+                v_w.append((beta_2*moments[2][i] + (1-beta_2)* np.power(dw[i],2) ) / (1-beta_2**t))
+                v_b.append((beta_2*moments[3][i] + (1-beta_2)* np.power(db[i],2) ) / (1-beta_2**t))
+
+                # Calculating new weights and biases
+                new_w.append(w[i] - (alpha / (np.sqrt(v_w[i]) + epsilon) * m_w[i]))
+                new_b.append(b[i] - (alpha / (np.sqrt(v_b[i]) + epsilon) * m_b[i]))
+            return new_w, new_b, [m_w, m_b, v_w, v_b]
+        
+        else:
+            for i in range(numHiddenL + 1):
+                new_w.append(w[i] - alpha * dw[i])
+                new_b.append(b[i] - alpha * db[i])
+            return new_w, new_b, None
 
 
     # Turns Y_train into usable data for our net. Does this by turing a number
@@ -237,20 +259,37 @@ class NeuralNet:
             return A0_new, Y_new, batchSize, indexes
         else: 
             return A0, Y, trainSize, None
+        
+    def __ADAM(self, ADAM, w, b, numHiddenL):
+        if ADAM == 1:
+            m_w = []
+            m_b = []
+            v_w = []
+            v_b = []
+            for i in range(numHiddenL + 1):
+                m_w.append(np.zeros_like(w[i]))
+                m_b.append(np.zeros_like(b[i]))
+                v_w.append(np.zeros_like(w[i]))
+                v_b.append(np.zeros_like(b[i]))
+            return [m_w, m_b, v_w, v_b]
+        else:
+            return None
 
 
 
     # Public method that trains the net with the given data with the given number
     # of iterations and the learning rate alpha 
-    def train(self, actFunc, outpActFun, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, dispFreq=250, SGD=0, batchSize=100):
+    def train(self, actFunc, outpActFun, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
+              dispFreq=250, SGD=0, batchSize=100, ADAM=0, epsilon=1e-8, beta_1=0.9, beta_2=0.999):
         y = self.__makeYUsable(Y_train, self.outputLS, trainSize)
+        moments = self.__ADAM(ADAM, self.w, self.b, self.numHiddenL)
 
         for i in range(iterations):
             A0_batch, y_batch, batchSize, indexes = self.__SGD(SGD, A0_train, y, trainSize, batchSize)
 
             a, z = self.__forward_prop(actFunc, outpActFun, A0_batch, self.w, self.b, self.numHiddenL)            
             dw, db = self.__back_prop(actFunc, outpActFun, lossFunc, y_batch, a, z, self.w, self.numHiddenL, batchSize)
-            self.w, self.b = self.__update_wb(self.w, self.b, dw, db, alpha, self.numHiddenL)
+            self.w, self.b, moments = self.__update_wb(ADAM, epsilon, beta_1, beta_2, self.w, self.b, dw, db, alpha, moments, i, self.numHiddenL)
 
             self.__print_itterationAccuracy(dispFreq, i, SGD, Y_train, indexes, a, self.numHiddenL, batchSize)
         return
