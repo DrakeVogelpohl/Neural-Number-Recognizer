@@ -17,7 +17,7 @@ class NeuralNet:
 
     # Helper for init that creates weights and biases
     def __create_WB(self, inputLS, outputLS, hiddenLS, numHiddenL):
-        ## Use He at al. (2015) variance to initialize weights ##
+        ## Use He et al. (2015) variance to initialize weights ##
         w_var = 2 / inputLS
         w = [np.random.normal(scale=w_var, size=(hiddenLS[0], inputLS))]
         b = [np.zeros((hiddenLS[0], 1))]
