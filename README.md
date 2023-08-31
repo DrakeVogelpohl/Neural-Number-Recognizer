@@ -19,15 +19,15 @@ Training supports industry standard activation and loss functions along with num
 Supported Stochastic Gradient Descent: SGD=1, batchSize='m'
 
 Supported Momentums: momentum = "No momentum", "ADAM", "SGD with momentum"
-    - ADAM: epsilon='e', beta_1='b1', beta_2='b2' 
-        -default settings are: e=1e-8, beta_1=0.9, beta_2=0.999, alpha=0.001
-    -For SGD with momentum: beta_1='b1' with default setting of beta_1=0.9
-        -*Note: scale alpha by 0.1
+- ADAM: epsilon='e', beta_1='b1', beta_2='b2' 
+    - default settings are: e=1e-8, beta_1=0.9, beta_2=0.999, alpha=0.001
+- For SGD with momentum: beta_1='b1' with default setting of beta_1=0.9
+    - *Note: scale alpha by 0.1
  
 Supported activation functions: "Sigmoid", "Tanh", "Softmax", "ReLU", "LeakyReLU", "ELU"
 
 Supported loss functions: "Mean Squared", "Cross Entropy"
-    -*Note: To use Cross entropy must use Softmax as the output Layer activation
+- *Note: To use Cross entropy must use Softmax as the output Layer activation
 
 
 train(self, actFunc, outpActFun, lossFunc, A0_train, Y_train, trainSize, iterations, alpha, 
