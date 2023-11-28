@@ -111,9 +111,9 @@ class NeuralNet:
             return A0, Y, trainSize, None
         
 
-    # Turns Y_train into usable data for our net. Does this by turing a number
-    # into a vector the same size as the output layer with all indexes 0 except for
-    # the one of the origional number
+    # Turns Y_train into usable data for the net through one hot encoding. 
+    # Does this by turing a number into a vector the same size as the output 
+    # layer with all indexes 0 except for the one of the origional number.
     def __makeYUsable(self, Y, outputLS, trainSize):
         y = np.zeros((trainSize, outputLS))
         y[np.arange(trainSize), Y] = 1
